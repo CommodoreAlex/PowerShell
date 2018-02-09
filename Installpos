@@ -1,5 +1,7 @@
+$version= $(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion' ProductName).ProductName
 
 ### Stop, disable, and query (for confirmation) Windows Updates  ###
+
 sc.exe stop wuauserv
 sc.exe config wuauserv start= disabled
 sc.exe query wuauserv
@@ -13,7 +15,6 @@ sc.exe config dosvc start= disabled
 sc.exe query dosvc
 
 ### Change the networking profile to Private (Work) * RUN ON WINDOWS 10 * ###
-$version= $(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion' ProductName).ProductName
 
 if ($version -eq "Windows 10") {
     Set-NetConnectionProfile -InterfaceAlias Ethernet -NetworkCategory Private
@@ -24,9 +25,11 @@ if ($version -eq "Windows 10") {
 }
 
 ### Turn off the Windows firewall, all profiles ###
+
 netsh advfirewall set allprofiles state off
 
 ### Change power management settings #####
+                                         #
 POWERCFG -change -monitor-timeout-ac 0   # 
 POWERCFG -change -standby-timeout-ac 0   # Turn off display never, display never, sleep (hibernate) never.
 POWERCFG -change -hibernate-timeout-ac 0 # 
@@ -36,26 +39,36 @@ POWERCFG -change -hibernate-timeout-ac 0 #
 $powerPlan = Get-WmiObject -Namespace root\cimv2\power -Class Win32_PowerPlan -Filter "ElementName = 'Balanced'"
 $powerPlan.Activate()
 
-Write-Host "Power plan is now set to balanced"
+### Change screensaver wait time, this will require a restart to apply changes ###
 
-### Change screensaver wait time ###
-# x
+reg add “HKEY_CURRENT_USER\Control Panel\Desktop” /v ScreenSaveTimeOut /t REG_SZ /d 10800 /f
+
+rundll32.exe user32.dll, UpdatePerUserSystemParameters
 
 ### Change UAC to lowest setting, will need restart to apply changes ###
+
 Set-ItemProperty -Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name EnableLUA -Value 0
 
 ### Rename PC ###
-# Rename-Computer -computername $env:computername -newname "ServerX" # Powershell 3.0 + cmdlet.
-$clientname = Read-Host -Prompt "Input the hostname for this terminal"
-(Get-WmiObject Win32_ComputerSystem).Rename('ServerOne') # Powershell 2.0 cmdlet.
+
+if ($version -eq "Windows 10") {
+    # Rename-Computer -computername $env:computername -newname "AppleServer" # Powershell 3.0 + cmdlet.
+    Write-Host "Confirmation Windows 10 if statement was ran." }
+{ elseif ($version -eq "Windows 7") 
+    $clientname = Read-Host -Prompt "Input the hostname for this terminal"
+    (Get-WmiObject Win32_ComputerSystem).Rename('ServerOne') # Powershell 2.0 cmdlet.
+    Write-Host "Confirmation Windows 7 if statement was ran." }
 
 ### Set password to main user account ###
+
 $username = Read-Host "Type the username:";
 
-$user = ([ADSI]"WinNT://$env:computername/$username").SetPassword("Appleseed")
+$user = ([ADSI]"WinNT://$env:computername/$username").SetPassword("Apple")
 
 ### Configure auto-login settings ###
+
 netplwiz
 
-### Restart computer to fully set changes ###
+### Restart computer to fully set changes, keep commented out to avoid unwanted shutdowns ###
+
 # Restart-Computer
