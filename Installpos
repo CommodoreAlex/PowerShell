@@ -1,5 +1,3 @@
-$version= $(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion' ProductName).ProductName
-
 ### Stop, disable, and query (for confirmation) Windows Updates  ###
 
 sc.exe stop wuauserv
@@ -16,13 +14,8 @@ sc.exe query dosvc
 
 ### Change the networking profile to Private (Work) * RUN ON WINDOWS 10 * ###
 
-if ($version -eq "Windows 10") {
-    Set-NetConnectionProfile -InterfaceAlias Ethernet -NetworkCategory Private
-    Get-NetConnectionProfile
-    Write-Host "Confirmation if statement was ran."
-} Else { 
-    Write-Host "Confirmation else statement was ran."
-}
+#Set-NetConnectionProfile -InterfaceAlias Ethernet -NetworkCategory Private
+#Get-NetConnectionProfile
 
 ### Turn off the Windows firewall, all profiles ###
 
@@ -49,15 +42,13 @@ rundll32.exe user32.dll, UpdatePerUserSystemParameters
 
 Set-ItemProperty -Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name EnableLUA -Value 0
 
-### Rename PC ###
+### Rename PC, will require restart to apply changes ###
 
-if ($version -eq "Windows 10") {
-    # Rename-Computer -computername $env:computername -newname "AppleServer" # Powershell 3.0 + cmdlet.
-    Write-Host "Confirmation Windows 10 if statement was ran." }
-{ elseif ($version -eq "Windows 7") 
-    $clientname = Read-Host -Prompt "Input the hostname for this terminal"
-    (Get-WmiObject Win32_ComputerSystem).Rename('ServerOne') # Powershell 2.0 cmdlet.
-    Write-Host "Confirmation Windows 7 if statement was ran." }
+# This is the statement to be ran if Windows 10.
+# Rename-Computer -computername $env:computername -newname "AppleServer" # Powershell 3.0 + cmdlet.
+
+# This is the statement to be ran if Windows 7.
+(Get-WmiObject Win32_ComputerSystem).Rename('ServerOne') # Powershell 2.0 cmdlet.
 
 ### Set password to main user account ###
 
